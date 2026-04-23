@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Micron</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    font-family:system-ui;
+    background:#000;
+    color:white;
+}
+
+header{
+    padding:18px;
+    font-size:20px;
+    font-weight:600;
+}
+
+.container{
+    padding:12px;
+}
+
+.card{
+    background:#0b1220;
+    border-radius:8px;
+    padding:16px;
+    margin-bottom:14px;
+}
+
+/* AMOUNT */
+.amount{
+    font-size:34px;
+    width:100%;
+    border:none;
+    outline:none;
+    background:transparent;
+    color:white;
+    margin-bottom:15px;
+}
+
+
+.select-group{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+select{
+    width:100%;
+    padding:14px;
+    border-radius:12px;
+    border:none;
+    background:#000;
+    color:white;
+    font-size:16px;
+}
+
+/* SWAP */
+.swap{
+    align-self:center;
+    width:45px;
+    height:45px;
+    border-radius:50%;
+    background:#4f46e5;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+}
+
+/* RESULT */
+.result{
+    margin-top:18px;
+    font-size:28px;
+    font-weight:600;
+}
+
+.rate{
+    font-size:13px;
+    color:#9ca3af;
+}
+
+/* SEARCH */
+.searchBox input{
+    width:100%;
+    padding:14px;
+    border-radius:12px;
+    border:none;
+    background:#0b1220;
+    color:white;
+    font-size:16px;
+}
+
+.list{
+    margin-top:10px;
+    max-height:250px;
+    overflow:auto;
+}
+
+.item{
+    padding:14px;
+    border-radius:10px;
+    margin-bottom:6px;
+    background:#0b1220;
+}
+
+.item:active{
+    background:#4f46e5;
+}
+
+/* DESKTOP */
+@media(min-width:900px){
+    .container{
+        max-width:1100px;
+        margin:auto;
+        display:grid;
+        grid-template-columns:1.2fr 1fr;
+        gap:20px;
+    }
+
+    .select-group{
+        flex-direction:row;
+        align-items:center;
+    }
+
+    .swap{
+        margin:0 5px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>Micron</header>
+
+<div class="container">
+
+<div class="card">
+
+<input class="amount" id="amount" placeholder="Enter amount">
+
+<div class="select-group">
+<select id="from"></select>
+
+<div class="swap" onclick="swap()">⇅</div>
+
+<select id="to"></select>
+</div>
+
+<div class="result" id="result">0</div>
+<div class="rate" id="rate"></div>
+
+</div>
+
+<div class="card searchBox">
+<input type="text" id="search" placeholder="Search currency..." oninput="searchCurrency()">
+<div class="list" id="list"></div>
+</div>
+
+</div>
+
+<script src="https://microintel.github.io/Micro-Library/micron/micron.js"></script>
+
+<script>
+let fromEl = document.getElementById("from");
+let toEl = document.getElementById("to");
+
+const topCurrencies = ["USD","INR","EUR","GBP","JPY","AUD","CAD","CHF","CNY","SGD"];
+
+async function init(){
+    await micron.load();
+
+    topCurrencies.forEach(c=>{
+        let o1=document.createElement("option");
+        let o2=document.createElement("option");
+
+        o1.value=o2.value=c;
+        o1.text = c + " - " + micron.name(c);
+        o2.text = c + " - " + micron.name(c);
+
+        fromEl.add(o1);
+        toEl.add(o2);
+    });
+
+    fromEl.value="USD";
+    toEl.value="INR";
+
+    convert();
+    renderList(micron.getAllCurrencies());
+}
+init();
+
+function convert(){
+    let amt = document.getElementById("amount").value || 0;
+
+    let res = micron.convert(amt, fromEl.value, toEl.value);
+    let rate = micron.getRate(fromEl.value, toEl.value);
+
+    document.getElementById("result").innerText =
+        res.toFixed(4) + " " + toEl.value;
+
+    document.getElementById("rate").innerText =
+        "1 " + fromEl.value + " = " + rate.toFixed(4) + " " + toEl.value;
+}
+
+function swap(){
+    let temp = fromEl.value;
+    fromEl.value = toEl.value;
+    toEl.value = temp;
+    convert();
+}
+
+fromEl.onchange = convert;
+toEl.onchange = convert;
+document.getElementById("amount").oninput = convert;
+
+function renderList(list){
+    let box = document.getElementById("list");
+    box.innerHTML="";
+
+    list.forEach(c=>{
+        let div=document.createElement("div");
+        div.className="item";
+        div.innerText = c + " - " + micron.name(c);
+        div.onclick = ()=> micron.openInGoogle(c);
+        box.appendChild(div);
+    });
+}
+
+function searchCurrency(){
+    let q = document.getElementById("search").value;
+
+    if(q.trim()===""){
+        renderList(micron.getAllCurrencies());
+    }else{
+        renderList(micron.search(q));
+    }
+}
+</script>
+
+</body>
+</html>
